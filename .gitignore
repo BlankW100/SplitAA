@@ -43,3 +43,23 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Private and Non-essential files
+.env
+*.env
+secrets.json
+config.json
+
+# Android signing keys and keystores
+*.jks
+*.keystore
+android/key.properties
+
+# Google Services (if added later)
+google-services.json
+GoogleService-Info.plist
+
+# VS Code user settings
+.vscode/
+*.code-workspace
+
