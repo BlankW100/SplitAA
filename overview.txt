@@ -1,0 +1,4 @@
+A mobile app that scan recpit and let u choose
+-devide all 
+-choose which food and total up
+
