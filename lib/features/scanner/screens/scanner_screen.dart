@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/camera_service.dart';
 import '../services/ocr_service.dart';
 import '../services/ocr_parser.dart';
+import '../../../core/services/crop_service.dart';
 import '../../split/screens/split_mode_screen.dart';
 
 class ScannerScreen extends StatefulWidget {
@@ -19,13 +20,17 @@ class _ScannerScreenState extends State<ScannerScreen> {
   String? _imagePath;
   bool _isProcessing = false;
 
-  Future<void> _processImage(String? path) async {
-    if (path == null) return;
+  Future<void> _processImage(String? rawPath) async {
+    if (rawPath == null) return;
 
-    setState(() {
-      _imagePath = path;
-      _isProcessing = true;
-    });
+    // Show the original photo immediately while the user crops.
+    setState(() { _imagePath = rawPath; _isProcessing = false; });
+
+    // Let the user crop before OCR — returns null if cancelled (keep original).
+    final cropped = await CropService.cropReceipt(rawPath);
+    final path = cropped ?? rawPath;
+
+    setState(() { _imagePath = path; _isProcessing = true; });
 
     try {
       final recognizedText = await _ocrService.processImage(path);

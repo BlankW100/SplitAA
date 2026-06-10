@@ -7,8 +7,10 @@ import 'package:share_plus/share_plus.dart';
 import '../../../core/backup/backup_service.dart';
 import '../../../core/currency/currency.dart';
 import '../../../core/currency/currency_provider.dart';
+import '../../../core/services/crop_service.dart';
 import '../../checklist/providers/checklist_provider.dart';
 import '../services/payment_profile_service.dart';
+import '../services/qr_validator.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -75,7 +77,67 @@ class _PaymentQrTileState extends State<_PaymentQrTile> {
   Future<void> _pick() async {
     final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (picked == null) return;
-    final saved = await PaymentProfileService.setQr(picked.path);
+
+    // Let the user crop to isolate the QR before we validate.
+    final cropped = await CropService.cropQr(picked.path);
+    if (cropped == null) return; // user cancelled crop
+
+    if (!mounted) return;
+    setState(() => _loading = true);
+
+    final result = await QrValidator.validate(cropped);
+
+    if (!mounted) return;
+    setState(() => _loading = false);
+
+    // Show validation result and let user decide whether to save.
+    final save = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              result.isOk ? Icons.check_circle_outline : Icons.warning_amber_outlined,
+              color: result.isOk ? Colors.green : Colors.orange,
+            ),
+            const SizedBox(width: 8),
+            Expanded(child: Text(result.isOk ? 'QR Detected' : 'QR Warning')),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(result.message),
+            if (result.previewData != null) ...[
+              const SizedBox(height: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: Image.file(File(cropped), height: 120, fit: BoxFit.contain),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Content: ${result.previewData}',
+                style: const TextStyle(fontSize: 11, color: Colors.grey),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(result.isOk ? 'Save' : 'Save anyway'),
+          ),
+        ],
+      ),
+    );
+
+    if (save != true || !mounted) return;
+    final saved = await PaymentProfileService.setQr(cropped);
     if (mounted) setState(() => _qrPath = saved);
   }
 
