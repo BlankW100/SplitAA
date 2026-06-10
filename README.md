@@ -1,17 +1,45 @@
-# splitaa
+# Splitaa
 
-A new Flutter project.
+A Flutter mobile app that scans receipts and lets a group split the bill — each person picks their items and the app tallies their share including tax and service fee.
+
+## Features
+
+- **Receipt Scanner** — take a photo or pick from gallery; ML Kit OCR extracts the text
+- **Split Calculator** — select items per person, set tax % and service fee %, see live subtotal/total
+- **Ledger** — track who owes what and mark debts as settled
+- **Settings** — placeholder for QR code / personal profile (in progress)
+
+## Tech Stack
+
+| Layer | Library |
+|---|---|
+| UI | Flutter + Material 3 |
+| State | Provider |
+| OCR | google_mlkit_text_recognition |
+| Camera / Gallery | image_picker |
+| Local DB | sqflite |
+| QR Code | qr_flutter (pending) |
+| Notifications | flutter_local_notifications (pending) |
+
+## Project Status
+
+| Area | Status |
+|---|---|
+| OCR service | Done |
+| Camera/gallery picker | Done |
+| Split calculator logic | Done |
+| SQLite ledger CRUD | Done |
+| Scanner → item parser | **In progress** |
+| Scanner ↔ Calculator wiring | **Pending** |
+| Add-entry UI on Ledger screen | **Pending** |
+| QR / share / notifications | **Pending** |
+| Settings screen | **Pending** |
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+```bash
+flutter pub get
+flutter run
+```
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Requires Android or iOS device/emulator. Camera and gallery permissions are requested at runtime.

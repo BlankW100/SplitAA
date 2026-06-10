@@ -49,6 +49,7 @@ app.*.map.json
 *.env
 secrets.json
 config.json
+overview.txt
 
 # Android signing keys and keystores
 *.jks
