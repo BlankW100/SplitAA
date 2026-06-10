@@ -1,11 +1,14 @@
+import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../core/backup/backup_service.dart';
 import '../../../core/currency/currency.dart';
 import '../../../core/currency/currency_provider.dart';
 import '../../checklist/providers/checklist_provider.dart';
+import '../services/payment_profile_service.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -16,6 +19,9 @@ class SettingsScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         children: const [
+          _SectionHeader('Payment'),
+          _PaymentQrTile(),
+          Divider(),
           _SectionHeader('Currency'),
           _CurrencyTile(),
           Divider(),
@@ -40,6 +46,77 @@ class _SectionHeader extends StatelessWidget {
             fontWeight: FontWeight.bold,
             color: Theme.of(context).colorScheme.primary,
           )),
+    );
+  }
+}
+
+class _PaymentQrTile extends StatefulWidget {
+  const _PaymentQrTile();
+
+  @override
+  State<_PaymentQrTile> createState() => _PaymentQrTileState();
+}
+
+class _PaymentQrTileState extends State<_PaymentQrTile> {
+  String? _qrPath;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final path = await PaymentProfileService.getQrPath();
+    if (mounted) setState(() { _qrPath = path; _loading = false; });
+  }
+
+  Future<void> _pick() async {
+    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (picked == null) return;
+    final saved = await PaymentProfileService.setQr(picked.path);
+    if (mounted) setState(() => _qrPath = saved);
+  }
+
+  Future<void> _remove() async {
+    await PaymentProfileService.clear();
+    if (mounted) setState(() => _qrPath = null);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const ListTile(
+        leading: Icon(Icons.qr_code_2),
+        title: Text('Payment QR'),
+        subtitle: Text('Loading…'),
+      );
+    }
+    return ListTile(
+      leading: const Icon(Icons.qr_code_2),
+      title: const Text('Your payment QR'),
+      subtitle: Text(_qrPath == null
+          ? 'Add your DuitNow / bank QR to print it on receipts'
+          : 'Tap to replace · printed on every receipt'),
+      trailing: _qrPath == null
+          ? FilledButton.tonal(onPressed: _pick, child: const Text('Add'))
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: Image.file(File(_qrPath!),
+                      width: 44, height: 44, fit: BoxFit.cover),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  tooltip: 'Remove',
+                  onPressed: _remove,
+                ),
+              ],
+            ),
+      onTap: _qrPath == null ? _pick : _pick,
     );
   }
 }

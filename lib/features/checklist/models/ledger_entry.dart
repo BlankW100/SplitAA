@@ -7,6 +7,10 @@ class LedgerEntry {
   final DateTime createdAt;
   final DateTime? dueDate;
 
+  /// Full receipt breakdown as JSON (see [ReceiptResult.toStorageJson]); null
+  /// for manually-created entries that have no scanned receipt behind them.
+  final String? payload;
+
   LedgerEntry({
     required this.id,
     required this.title,
@@ -15,6 +19,7 @@ class LedgerEntry {
     required this.isSettled,
     required this.createdAt,
     this.dueDate,
+    this.payload,
   });
 
   Map<String, Object?> toJson() => {
@@ -25,6 +30,7 @@ class LedgerEntry {
         'is_settled': isSettled ? 1 : 0,
         'created_at': createdAt.toIso8601String(),
         'due_date': dueDate?.toIso8601String(),
+        'payload': payload,
       };
 
   static LedgerEntry fromJson(Map<String, Object?> json) => LedgerEntry(
@@ -35,5 +41,6 @@ class LedgerEntry {
         isSettled: json['is_settled'] == 1,
         createdAt: DateTime.parse(json['created_at'] as String),
         dueDate: json['due_date'] != null ? DateTime.parse(json['due_date'] as String) : null,
+        payload: json['payload'] as String?,
       );
 }

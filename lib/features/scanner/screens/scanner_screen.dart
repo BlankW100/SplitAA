@@ -29,7 +29,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
     try {
       final recognizedText = await _ocrService.processImage(path);
-      final items = OcrParser.parse(recognizedText.text);
+      final items = OcrParser.parseRecognized(recognizedText);
 
       if (!mounted) return;
       Navigator.push(
@@ -62,7 +62,8 @@ class _ScannerScreenState extends State<ScannerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Scan Receipt')),
-      body: Column(
+      body: SafeArea(
+        child: Column(
         children: [
           // Image preview
           Expanded(
@@ -146,6 +147,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
             ),
           ),
         ],
+        ),
       ),
     );
   }

@@ -13,10 +13,20 @@ class DatabaseHelper {
   Future<Database> _initDB(String filePath) async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
-    return await openDatabase(path, version: 1, onCreate: _createDB);
+    return await openDatabase(
+      path,
+      version: 2,
+      onCreate: _createDB,
+      onUpgrade: _upgradeDB,
+    );
   }
   Future _createDB(Database db, int version) async {
-    await db.execute('''CREATE TABLE ledger (id TEXT PRIMARY KEY, title TEXT NOT NULL, total_amount REAL NOT NULL, debtor_identifier TEXT, is_settled INTEGER NOT NULL, created_at TEXT NOT NULL, due_date TEXT)''');
+    await db.execute('''CREATE TABLE ledger (id TEXT PRIMARY KEY, title TEXT NOT NULL, total_amount REAL NOT NULL, debtor_identifier TEXT, is_settled INTEGER NOT NULL, created_at TEXT NOT NULL, due_date TEXT, payload TEXT)''');
+  }
+  Future _upgradeDB(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE ledger ADD COLUMN payload TEXT');
+    }
   }
   Future<void> close() async {
     final db = await instance.database;

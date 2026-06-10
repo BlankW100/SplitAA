@@ -29,4 +29,13 @@ class FeeItem {
         'value': value,
         'isDiscount': isDiscount,
       };
+
+  factory FeeItem.fromJson(Map<String, dynamic> json, String id) => FeeItem(
+        id: id,
+        label: json['label'] as String,
+        isEnabled: true,
+        isPercentage: json['isPercentage'] as bool? ?? true,
+        value: (json['value'] as num?)?.toDouble() ?? 0.0,
+        isDiscount: json['isDiscount'] as bool? ?? false,
+      );
 }

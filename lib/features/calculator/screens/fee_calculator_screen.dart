@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../../scanner/models/receipt_item.dart';
 import '../models/fee_item.dart';
+import '../widgets/fee_editor.dart';
 import '../../receipt/screens/receipt_result_screen.dart';
 import '../../receipt/models/receipt_result.dart';
 
@@ -35,7 +36,7 @@ class _FeeCalculatorScreenState extends State<FeeCalculatorScreen> {
   void _showAddFeeDialog() {
     showDialog(
       context: context,
-      builder: (_) => _AddFeeDialog(
+      builder: (_) => AddFeeDialog(
         onAdd: (label, isPercentage, isDiscount) => setState(() {
           _fees.add(FeeItem(
             id: _uuid.v4(),
@@ -72,7 +73,8 @@ class _FeeCalculatorScreenState extends State<FeeCalculatorScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Fees & Discounts')),
-      body: Column(
+      body: SafeArea(
+        child: Column(
         children: [
           // Items summary card
           Padding(
@@ -132,7 +134,7 @@ class _FeeCalculatorScreenState extends State<FeeCalculatorScreen> {
                   ],
                 ),
                 const SizedBox(height: 4),
-                ..._fees.asMap().entries.map((e) => _FeeRow(
+                ..._fees.asMap().entries.map((e) => FeeRow(
                       key: ValueKey(e.value.id),
                       fee: e.value,
                       onToggle: (val) => setState(() => e.value.isEnabled = val),
@@ -204,176 +206,8 @@ class _FeeCalculatorScreenState extends State<FeeCalculatorScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ── Fee row widget ────────────────────────────────────────────────────────────
-
-class _FeeRow extends StatefulWidget {
-  final FeeItem fee;
-  final ValueChanged<bool> onToggle;
-  final ValueChanged<double> onValueChanged;
-  final ValueChanged<bool> onTypeChanged;
-
-  const _FeeRow({
-    super.key,
-    required this.fee,
-    required this.onToggle,
-    required this.onValueChanged,
-    required this.onTypeChanged,
-  });
-
-  @override
-  State<_FeeRow> createState() => _FeeRowState();
-}
-
-class _FeeRowState extends State<_FeeRow> {
-  late final TextEditingController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = TextEditingController(
-      text: widget.fee.value > 0 ? widget.fee.value.toString() : '',
-    );
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-        child: Row(
-          children: [
-            Checkbox(
-              value: widget.fee.isEnabled,
-              onChanged: (val) => widget.onToggle(val ?? false),
-            ),
-            Expanded(
-              child: Text(
-                widget.fee.label,
-                style: TextStyle(
-                  color: widget.fee.isDiscount ? Colors.green.shade700 : null,
-                ),
-              ),
-            ),
-            if (widget.fee.isEnabled) ...[
-              SizedBox(
-                width: 72,
-                child: TextField(
-                  controller: _ctrl,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                    border: OutlineInputBorder(),
-                  ),
-                  onChanged: (v) => widget.onValueChanged(double.tryParse(v) ?? 0),
-                ),
-              ),
-              const SizedBox(width: 4),
-              DropdownButton<bool>(
-                value: widget.fee.isPercentage,
-                isDense: true,
-                underline: const SizedBox(),
-                items: const [
-                  DropdownMenuItem(value: true, child: Text('%')),
-                  DropdownMenuItem(value: false, child: Text('RM')),
-                ],
-                onChanged: (val) => widget.onTypeChanged(val ?? true),
-              ),
-              const SizedBox(width: 4),
-            ],
-          ],
         ),
       ),
-    );
-  }
-}
-
-// ── Add custom fee dialog ─────────────────────────────────────────────────────
-
-class _AddFeeDialog extends StatefulWidget {
-  final void Function(String label, bool isPercentage, bool isDiscount) onAdd;
-  const _AddFeeDialog({required this.onAdd});
-
-  @override
-  State<_AddFeeDialog> createState() => _AddFeeDialogState();
-}
-
-class _AddFeeDialogState extends State<_AddFeeDialog> {
-  final _ctrl = TextEditingController();
-  bool _isPercentage = true;
-  bool _isDiscount = false;
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Add Custom Fee'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _ctrl,
-            decoration: const InputDecoration(labelText: 'Label (e.g. "SST 8%")'),
-            textCapitalization: TextCapitalization.words,
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              const Text('Unit: '),
-              const SizedBox(width: 8),
-              ChoiceChip(
-                label: const Text('Percentage %'),
-                selected: _isPercentage,
-                onSelected: (_) => setState(() => _isPercentage = true),
-              ),
-              const SizedBox(width: 8),
-              ChoiceChip(
-                label: const Text('Fixed RM'),
-                selected: !_isPercentage,
-                onSelected: (_) => setState(() => _isPercentage = false),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          CheckboxListTile(
-            value: _isDiscount,
-            onChanged: (val) => setState(() => _isDiscount = val ?? false),
-            title: const Text('This is a discount'),
-            dense: true,
-            contentPadding: EdgeInsets.zero,
-            controlAffinity: ListTileControlAffinity.leading,
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-        FilledButton(
-          onPressed: () {
-            final label = _ctrl.text.trim();
-            if (label.isEmpty) return;
-            widget.onAdd(label, _isPercentage, _isDiscount);
-            Navigator.pop(context);
-          },
-          child: const Text('Add'),
-        ),
-      ],
     );
   }
 }

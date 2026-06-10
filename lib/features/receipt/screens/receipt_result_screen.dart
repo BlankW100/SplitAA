@@ -82,6 +82,7 @@ class _ReceiptResultScreenState extends State<ReceiptResultScreen> {
       totalAmount: r.total,
       isSettled: false,
       createdAt: r.timestamp,
+      payload: r.toStorageJson(),
     );
     await context.read<ChecklistProvider>().addEntry(entry);
     if (mounted) {
@@ -97,8 +98,18 @@ class _ReceiptResultScreenState extends State<ReceiptResultScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Your Receipt')),
-      body: SingleChildScrollView(
+      appBar: AppBar(
+        title: const Text('Your Receipt'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.home_outlined),
+            tooltip: 'Back to home',
+            onPressed: () => Navigator.of(context).popUntil((r) => r.isFirst),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -161,7 +172,9 @@ class _ReceiptResultScreenState extends State<ReceiptResultScreen> {
                     Text('Summary', style: Theme.of(context).textTheme.titleSmall),
                     const Divider(),
                     ...widget.result.items.map(
-                      (item) => _SummaryRow(item.name, 'RM ${item.price.toStringAsFixed(2)}'),
+                      (item) => _SummaryRow(
+                          item.quantity > 1 ? '${item.quantity}× ${item.name}' : item.name,
+                          'RM ${item.price.toStringAsFixed(2)}'),
                     ),
                     const Divider(),
                     _SummaryRow('Subtotal', 'RM ${widget.result.subtotal.toStringAsFixed(2)}', muted: true),
@@ -184,7 +197,17 @@ class _ReceiptResultScreenState extends State<ReceiptResultScreen> {
                 ),
               ),
             ),
+
+            const SizedBox(height: 16),
+
+            // Finish — return to the start of the flow.
+            OutlinedButton.icon(
+              onPressed: () => Navigator.of(context).popUntil((r) => r.isFirst),
+              icon: const Icon(Icons.check_circle_outline),
+              label: const Text('Done'),
+            ),
           ],
+        ),
         ),
       ),
     );
