@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/database/db_helper.dart';
+import 'core/currency/currency_provider.dart';
 import 'features/checklist/providers/checklist_provider.dart';
-import 'features/calculator/providers/calculator_provider.dart';
 import 'features/scanner/screens/scanner_screen.dart';
-import 'features/calculator/screens/split_calculator_screen.dart';
+import 'features/quicksplit/screens/quick_split_screen.dart';
 import 'features/checklist/screens/checklist_screen.dart';
+import 'features/history/screens/history_screen.dart';
 import 'features/settings/screens/settings_screen.dart';
 
 void main() async {
@@ -15,7 +16,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ChecklistProvider()..fetchEntries()),
-        ChangeNotifierProvider(create: (_) => CalculatorProvider()),
+        ChangeNotifierProvider(create: (_) => CurrencyProvider()..load()),
       ],
       child: const SplitaaApp(),
     ),
@@ -47,11 +48,12 @@ class MainLayout extends StatefulWidget {
 
 class _MainLayoutState extends State<MainLayout> {
   int _currentIndex = 0;
-  
+
   final _screens = const [
     ScannerScreen(),
-    SplitCalculatorScreen(),
+    QuickSplitScreen(),
     ChecklistScreen(),
+    HistoryScreen(),
     SettingsScreen(),
   ];
 
@@ -70,6 +72,7 @@ class _MainLayoutState extends State<MainLayout> {
           NavigationDestination(icon: Icon(Icons.document_scanner), label: 'Scan'),
           NavigationDestination(icon: Icon(Icons.calculate), label: 'Split'),
           NavigationDestination(icon: Icon(Icons.checklist), label: 'Ledger'),
+          NavigationDestination(icon: Icon(Icons.insights), label: 'Spending'),
           NavigationDestination(icon: Icon(Icons.settings), label: 'Settings'),
         ],
       ),

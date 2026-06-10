@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:splitaa/main.dart';
+import 'package:splitaa/core/currency/currency_provider.dart';
 import 'package:splitaa/features/checklist/providers/checklist_provider.dart';
-import 'package:splitaa/features/calculator/providers/calculator_provider.dart';
 
 void main() {
   testWidgets('App loads smoke test', (WidgetTester tester) async {
@@ -12,7 +12,7 @@ void main() {
       MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (_) => ChecklistProvider()),
-          ChangeNotifierProvider(create: (_) => CalculatorProvider()),
+          ChangeNotifierProvider(create: (_) => CurrencyProvider()),
         ],
         child: const SplitaaApp(),
       ),
