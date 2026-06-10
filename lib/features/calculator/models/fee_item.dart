@@ -23,6 +23,17 @@ class FeeItem {
     return isDiscount ? -amount : amount;
   }
 
+  /// One person's share when splitting a bill among [partySize] people.
+  /// A percentage fee is naturally per-person (applied to their own subtotal);
+  /// a fixed RM amount is divided equally across the whole party.
+  double computeShare(double subtotal, int partySize) {
+    if (!isEnabled || value <= 0) return 0.0;
+    final amount = isPercentage
+        ? subtotal * (value / 100)
+        : value / (partySize < 1 ? 1 : partySize);
+    return isDiscount ? -amount : amount;
+  }
+
   Map<String, dynamic> toJson() => {
         'label': label,
         'isPercentage': isPercentage,

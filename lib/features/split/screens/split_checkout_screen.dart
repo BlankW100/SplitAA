@@ -34,8 +34,11 @@ class _SplitCheckoutScreenState extends State<SplitCheckoutScreen> {
   List<FeeItem> get _enabledFees =>
       _fees.where((f) => f.isEnabled && f.value > 0).toList();
 
+  /// The whole party = each split receipt + the user themselves.
+  int get _partySize => widget.people.length + 1;
+
   double _feesFor(double subtotal) =>
-      _fees.fold(0.0, (s, f) => s + f.compute(subtotal));
+      _fees.fold(0.0, (s, f) => s + f.computeShare(subtotal, _partySize));
 
   double _totalFor(PersonBill p) => p.subtotal + _feesFor(p.subtotal);
 
@@ -63,13 +66,15 @@ class _SplitCheckoutScreenState extends State<SplitCheckoutScreen> {
     final now = DateTime.now();
     final results = widget.people.map((p) {
       // Clone the enabled fees per person so each receipt is self-contained.
+      // Fixed RM amounts are split across the whole party (people + the user),
+      // so each receipt carries only its share; percentages stay as-is.
       final fees = _enabledFees
           .map((f) => FeeItem(
               id: _uuid.v4(),
               label: f.label,
               isEnabled: true,
               isPercentage: f.isPercentage,
-              value: f.value,
+              value: f.isPercentage ? f.value : f.value / _partySize,
               isDiscount: f.isDiscount))
           .toList();
       return ReceiptResult(
@@ -175,7 +180,9 @@ class _SplitCheckoutScreenState extends State<SplitCheckoutScreen> {
                       )),
                   const SizedBox(height: 4),
                   Text(
-                    'Each fee is calculated on that person\'s own subtotal.',
+                    'Percentages apply to each person\'s own subtotal. '
+                    'Fixed RM amounts are split equally across $_partySize people '
+                    '(${widget.people.length} + you).',
                     style: theme.textTheme.bodySmall,
                   ),
                 ],

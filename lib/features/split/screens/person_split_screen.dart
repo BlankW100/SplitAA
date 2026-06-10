@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../../scanner/models/receipt_item.dart';
+import '../../scanner/widgets/item_dialog.dart';
 import '../models/person_bill.dart';
 import 'split_checkout_screen.dart';
 
@@ -9,7 +11,8 @@ import 'split_checkout_screen.dart';
 /// zero it leaves the pool. Repeat per person until the pool is empty.
 class PersonSplitScreen extends StatefulWidget {
   final List<ReceiptItem> items;
-  const PersonSplitScreen({super.key, required this.items});
+  final String? imagePath;
+  const PersonSplitScreen({super.key, required this.items, this.imagePath});
 
   @override
   State<PersonSplitScreen> createState() => _PersonSplitScreenState();
@@ -42,6 +45,47 @@ class _PersonSplitScreenState extends State<PersonSplitScreen> {
 
   void _assign(String id) => setState(() => SplitOps.assignUnit(_pool, _current, id));
   void _return(String id) => setState(() => SplitOps.returnUnit(_pool, _current, id));
+
+  void _addItem() {
+    showDialog(
+      context: context,
+      builder: (_) => ItemDialog(
+        onConfirm: (name, price, qty) => setState(() {
+          _pool.add(ReceiptItem(id: _uuid.v4(), name: name, price: price, quantity: qty));
+        }),
+      ),
+    );
+  }
+
+  void _editPoolItem(ReceiptItem item) {
+    showDialog(
+      context: context,
+      builder: (_) => ItemDialog(
+        initialName: item.name,
+        initialPrice: item.price,
+        initialQuantity: item.quantity,
+        onConfirm: (name, price, qty) => setState(() {
+          item.name = name;
+          item.price = price;
+          item.quantity = qty;
+        }),
+      ),
+    );
+  }
+
+  void _viewPhoto() {
+    if (widget.imagePath == null) return;
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        insetPadding: const EdgeInsets.all(12),
+        child: InteractiveViewer(
+          maxScale: 5,
+          child: Image.file(File(widget.imagePath!)),
+        ),
+      ),
+    );
+  }
 
   void _snack(String msg) => ScaffoldMessenger.of(context)
       .showSnackBar(SnackBar(content: Text(msg)));
@@ -84,7 +128,22 @@ class _PersonSplitScreenState extends State<PersonSplitScreen> {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: Text('Split — Person ${_people.length + 1}')),
+      appBar: AppBar(
+        title: Text('Split — Person ${_people.length + 1}'),
+        actions: [
+          if (widget.imagePath != null)
+            IconButton(
+              icon: const Icon(Icons.image_outlined),
+              tooltip: 'View receipt photo',
+              onPressed: _viewPhoto,
+            ),
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline),
+            tooltip: 'Add missing item',
+            onPressed: _addItem,
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -146,7 +205,17 @@ class _PersonSplitScreenState extends State<PersonSplitScreen> {
                             ),
                             title: Text(item.name),
                             subtitle: Text('RM ${item.price.toStringAsFixed(2)} left'),
-                            trailing: const Icon(Icons.add_circle_outline),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.edit_outlined, size: 18),
+                                  tooltip: 'Edit item',
+                                  onPressed: () => _editPoolItem(item),
+                                ),
+                                const Icon(Icons.add_circle_outline),
+                              ],
+                            ),
                             onTap: () => _assign(item.id),
                           ),
                         )),

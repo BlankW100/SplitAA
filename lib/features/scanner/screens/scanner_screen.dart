@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/camera_service.dart';
 import '../services/ocr_service.dart';
 import '../services/ocr_parser.dart';
-import 'item_checklist_screen.dart';
+import '../../split/screens/split_mode_screen.dart';
 
 class ScannerScreen extends StatefulWidget {
   const ScannerScreen({super.key});
@@ -35,8 +35,8 @@ class _ScannerScreenState extends State<ScannerScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => ItemChecklistScreen(
-            parsedItems: items,
+          builder: (_) => SplitModeScreen(
+            items: items,
             imagePath: path,
           ),
         ),
