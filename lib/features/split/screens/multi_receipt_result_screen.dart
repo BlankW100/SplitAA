@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:gal/gal.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:uuid/uuid.dart';
 import '../../receipt/models/receipt_result.dart';
@@ -144,40 +144,23 @@ class _PersonReceiptCardState extends State<_PersonReceiptCard> {
     );
   }
 
-  void _showQr() {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text('${widget.result.payerName ?? 'Bill'} — QR'),
-        contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
-        content: SizedBox(
-          width: 280,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: 240,
-                height: 240,
-                child: QrImageView(
-                  data: widget.result.toQrPayload(),
-                  version: QrVersions.auto,
-                  backgroundColor: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                'Scan with Splitaa to receive this bill.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
-        ],
-      ),
-    );
+  Future<void> _saveImage() async {
+    if (_image == null) return;
+    try {
+      final name = (widget.result.payerName ?? 'bill').replaceAll(RegExp(r'\s+'), '_');
+      await Gal.putImageBytes(_image!, name: 'splitaa_${name}_${DateTime.now().millisecondsSinceEpoch}.png');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Receipt saved to gallery.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not save: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -226,9 +209,9 @@ class _PersonReceiptCardState extends State<_PersonReceiptCard> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: _showQr,
-                    icon: const Icon(Icons.qr_code_2_outlined, size: 18),
-                    label: const Text('QR'),
+                    onPressed: _image != null ? _saveImage : null,
+                    icon: const Icon(Icons.download_outlined, size: 18),
+                    label: const Text('Save'),
                   ),
                 ),
               ],
