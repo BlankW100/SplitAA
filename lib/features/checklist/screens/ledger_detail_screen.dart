@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/checklist_provider.dart';
+import '../../../core/services/notification_service.dart';
 import '../../receipt/models/receipt_result.dart';
 
 class LedgerDetailScreen extends StatelessWidget {
@@ -10,6 +11,58 @@ class LedgerDetailScreen extends StatelessWidget {
   String _fmtDate(DateTime dt) =>
       '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}  '
       '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+
+  Future<void> _pickReminder(BuildContext context, String id, String name, double amount) async {
+    // Pick date.
+    final today = DateTime.now();
+    final date = await showDatePicker(
+      context: context,
+      initialDate: today.add(const Duration(days: 1)),
+      firstDate: today,
+      lastDate: today.add(const Duration(days: 365)),
+      helpText: 'Reminder date',
+    );
+    if (date == null || !context.mounted) return;
+
+    // Pick time.
+    final time = await showTimePicker(
+      context: context,
+      initialTime: const TimeOfDay(hour: 9, minute: 0),
+      helpText: 'Reminder time',
+    );
+    if (time == null || !context.mounted) return;
+
+    final scheduledDate = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+
+    final hasPermission = await NotificationService.hasPermission();
+    if (!hasPermission && context.mounted) {
+      await NotificationService.requestPermission();
+    }
+
+    if (!context.mounted) return;
+    await context.read<ChecklistProvider>().setDueDate(id, scheduledDate);
+    await NotificationService.scheduleReminder(
+      entryId: id,
+      personName: name,
+      amount: amount,
+      scheduledDate: scheduledDate,
+    );
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Reminder set for ${_fmtDate(scheduledDate)}')),
+      );
+    }
+  }
+
+  Future<void> _clearReminder(BuildContext context, String id) async {
+    await context.read<ChecklistProvider>().setDueDate(id, null);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Reminder cleared.')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +78,7 @@ class LedgerDetailScreen extends StatelessWidget {
           }
           final entry = matches.first;
           final receipt = ReceiptResult.fromStorageJson(entry.payload);
+          final name = entry.debtorIdentifier ?? entry.title;
 
           return SafeArea(
             child: ListView(
@@ -34,9 +88,6 @@ class LedgerDetailScreen extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text('Created ${_fmtDate(entry.createdAt)}',
                     style: theme.textTheme.bodySmall),
-                if (entry.dueDate != null)
-                  Text('Due ${_fmtDate(entry.dueDate!)}',
-                      style: theme.textTheme.bodySmall),
                 const SizedBox(height: 16),
 
                 if (receipt != null)
@@ -50,7 +101,64 @@ class LedgerDetailScreen extends StatelessWidget {
                     ),
                   ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
+
+                // Reminder card
+                if (!entry.isSettled) ...[
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.alarm_outlined, size: 18),
+                              const SizedBox(width: 6),
+                              Text('Reminder', style: theme.textTheme.labelLarge),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          if (entry.dueDate != null) ...[
+                            Text(
+                              'Scheduled: ${_fmtDate(entry.dueDate!)}',
+                              style: theme.textTheme.bodySmall,
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    onPressed: () => _pickReminder(context, entry.id, name, entry.totalAmount),
+                                    icon: const Icon(Icons.edit_outlined, size: 16),
+                                    label: const Text('Change'),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    onPressed: () => _clearReminder(context, entry.id),
+                                    icon: const Icon(Icons.alarm_off_outlined, size: 16),
+                                    label: const Text('Clear'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ] else
+                            SizedBox(
+                              width: double.infinity,
+                              child: FilledButton.tonalIcon(
+                                onPressed: () => _pickReminder(context, entry.id, name, entry.totalAmount),
+                                icon: const Icon(Icons.add_alarm_outlined, size: 18),
+                                label: const Text('Set reminder'),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
 
                 // Settle toggle
                 FilledButton.tonalIcon(

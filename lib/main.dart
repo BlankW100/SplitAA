@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/database/db_helper.dart';
+import 'core/services/notification_service.dart';
 import 'core/currency/currency_provider.dart';
 import 'features/checklist/providers/checklist_provider.dart';
 import 'features/scanner/screens/scanner_screen.dart';
@@ -11,7 +12,8 @@ import 'features/settings/screens/settings_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await DatabaseHelper.instance.database; // Ensure DB is initialized early
+  await DatabaseHelper.instance.database;
+  await NotificationService.init();
   runApp(
     MultiProvider(
       providers: [

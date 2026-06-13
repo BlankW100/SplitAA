@@ -8,6 +8,7 @@ import '../../../core/backup/backup_service.dart';
 import '../../../core/currency/currency.dart';
 import '../../../core/currency/currency_provider.dart';
 import '../../../core/services/crop_service.dart';
+import '../../../core/services/notification_service.dart';
 import '../../checklist/providers/checklist_provider.dart';
 import '../services/payment_profile_service.dart';
 import '../services/qr_validator.dart';
@@ -20,15 +21,18 @@ class SettingsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
-        children: const [
-          _SectionHeader('Payment'),
-          _PaymentQrTile(),
-          Divider(),
-          _SectionHeader('Currency'),
-          _CurrencyTile(),
-          Divider(),
-          _SectionHeader('Backup'),
-          _BackupTiles(),
+        children: [
+          const _SectionHeader('Payment'),
+          const _PaymentQrTile(),
+          const Divider(),
+          const _SectionHeader('Notifications'),
+          const _NotificationsTile(),
+          const Divider(),
+          const _SectionHeader('Currency'),
+          const _CurrencyTile(),
+          const Divider(),
+          const _SectionHeader('Backup'),
+          const _BackupTiles(),
         ],
       ),
     );
@@ -305,5 +309,48 @@ class _BackupTiles extends StatelessWidget {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result.message)));
     }
+  }
+}
+
+class _NotificationsTile extends StatefulWidget {
+  const _NotificationsTile();
+
+  @override
+  State<_NotificationsTile> createState() => _NotificationsTileState();
+}
+
+class _NotificationsTileState extends State<_NotificationsTile> {
+  bool? _enabled;
+
+  @override
+  void initState() {
+    super.initState();
+    NotificationService.hasPermission().then((v) {
+      if (mounted) setState(() => _enabled = v);
+    });
+  }
+
+  Future<void> _request() async {
+    await NotificationService.requestPermission();
+    final enabled = await NotificationService.hasPermission();
+    if (mounted) setState(() => _enabled = enabled);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: const Icon(Icons.notifications_outlined),
+      title: const Text('Debt reminders'),
+      subtitle: Text(_enabled == null
+          ? 'Checking…'
+          : _enabled!
+              ? 'Enabled — set reminders from any ledger entry'
+              : 'Tap to allow notifications for due-date reminders'),
+      trailing: _enabled == false
+          ? FilledButton.tonal(onPressed: _request, child: const Text('Enable'))
+          : _enabled == true
+              ? const Icon(Icons.check_circle_outline, color: Colors.green)
+              : null,
+    );
   }
 }
