@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'core/database/db_helper.dart';
 import 'core/services/notification_service.dart';
 import 'core/currency/currency_provider.dart';
+import 'core/theme/theme_provider.dart';
 import 'features/checklist/providers/checklist_provider.dart';
 import 'features/scanner/screens/scanner_screen.dart';
 import 'features/quicksplit/screens/quick_split_screen.dart';
@@ -17,6 +18,7 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()..load()),
         ChangeNotifierProvider(create: (_) => ChecklistProvider()..fetchEntries()),
         ChangeNotifierProvider(create: (_) => CurrencyProvider()..load()),
       ],
@@ -30,10 +32,19 @@ class SplitaaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = context.watch<ThemeProvider>();
     return MaterialApp(
       title: 'Splitaa',
+      themeMode: theme.themeMode,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+        colorScheme: ColorScheme.fromSeed(seedColor: theme.seedColor),
+        useMaterial3: true,
+      ),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: theme.seedColor,
+          brightness: Brightness.dark,
+        ),
         useMaterial3: true,
       ),
       home: const MainLayout(),

@@ -9,6 +9,7 @@ import '../../../core/currency/currency.dart';
 import '../../../core/currency/currency_provider.dart';
 import '../../../core/services/crop_service.dart';
 import '../../../core/services/notification_service.dart';
+import '../../../core/theme/theme_provider.dart';
 import '../../checklist/providers/checklist_provider.dart';
 import '../services/payment_profile_service.dart';
 import '../services/qr_validator.dart';
@@ -22,6 +23,9 @@ class SettingsScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         children: [
+          const _SectionHeader('Appearance'),
+          const _ThemeTile(),
+          const Divider(),
           const _SectionHeader('Payment'),
           const _PaymentQrTile(),
           const Divider(),
@@ -52,6 +56,111 @@ class _SectionHeader extends StatelessWidget {
             fontWeight: FontWeight.bold,
             color: Theme.of(context).colorScheme.primary,
           )),
+    );
+  }
+}
+
+class _ThemeTile extends StatelessWidget {
+  const _ThemeTile();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.watch<ThemeProvider>();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Dark / light / system toggle
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: SegmentedButton<ThemeMode>(
+            segments: const [
+              ButtonSegment(
+                value: ThemeMode.system,
+                icon: Icon(Icons.brightness_auto_outlined),
+                label: Text('System'),
+              ),
+              ButtonSegment(
+                value: ThemeMode.light,
+                icon: Icon(Icons.light_mode_outlined),
+                label: Text('Light'),
+              ),
+              ButtonSegment(
+                value: ThemeMode.dark,
+                icon: Icon(Icons.dark_mode_outlined),
+                label: Text('Dark'),
+              ),
+            ],
+            selected: {theme.themeMode},
+            onSelectionChanged: (s) => theme.setMode(s.first),
+          ),
+        ),
+
+        // Color swatches
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+          child: Wrap(
+            spacing: 10,
+            children: [
+              for (final preset in ThemeProvider.presets)
+                _ColorSwatch(
+                  color: preset.color,
+                  label: preset.label,
+                  selected: theme.seedColor == preset.color,
+                  onTap: () => theme.setSeedColor(preset.color),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ColorSwatch extends StatelessWidget {
+  final Color color;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _ColorSwatch({
+    required this.color,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: label,
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+            border: selected
+                ? Border.all(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    width: 3,
+                  )
+                : null,
+            boxShadow: [
+              BoxShadow(
+                color: color.withAlpha(100),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: selected
+              ? const Icon(Icons.check, color: Colors.white, size: 18)
+              : null,
+        ),
+      ),
     );
   }
 }
