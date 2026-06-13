@@ -149,18 +149,29 @@ class _PersonReceiptCardState extends State<_PersonReceiptCard> {
       context: context,
       builder: (_) => AlertDialog(
         title: Text('${widget.result.payerName ?? 'Bill'} — QR'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            QrImageView(
-                data: widget.result.toQrPayload(), size: 220, version: QrVersions.auto),
-            const SizedBox(height: 10),
-            const Text(
-              'Scan with Splitaa to receive this bill.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-          ],
+        contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+        content: SizedBox(
+          width: 280,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 240,
+                height: 240,
+                child: QrImageView(
+                  data: widget.result.toQrPayload(),
+                  version: QrVersions.auto,
+                  backgroundColor: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Scan with Splitaa to receive this bill.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
